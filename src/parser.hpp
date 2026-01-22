@@ -205,14 +205,14 @@ struct FunCall : Expr {
 };
 
 class Parser {
-private:
+protected:
     TokenStream tokens;
 
 public:
     virtual std::shared_ptr<Program> program();
     virtual std::shared_ptr<Decl> declaration();
     virtual std::vector<std::string> param_list();
-    virtual std::shared_ptr<CompStmt> compound();
+    virtual std::shared_ptr<CompStmt> compound() = 0;
     virtual std::shared_ptr<Stmt> statement();
     virtual std::shared_ptr<Expr> expression();
     virtual std::shared_ptr<Expr> assign();
@@ -221,10 +221,11 @@ public:
     virtual std::shared_ptr<Expr> term();
     virtual std::shared_ptr<Expr> factor();
     virtual std::shared_ptr<Expr> unary();
-    virtual std::shared_ptr<Expr> primary();
+    virtual std::shared_ptr<Expr> primary() = 0;
     virtual std::shared_ptr<FunCall> funcall();
     virtual std::vector<std::shared_ptr<Expr>> arg_list();
 
     Parser(const TokenStream& tokens);
+    virtual ~Parser() = default;
     std::shared_ptr<Program> parse();
 };

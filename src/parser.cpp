@@ -51,7 +51,7 @@ shared_ptr<Decl> Parser::declaration()
         vector<string> params { param_list() };
         shared_ptr<CompStmt> comp_stmt { compound() };
 
-        return make_shared<FunDecl>(name, params, comp_stmt);
+        return make_shared<FunDecl>(name, type, params, comp_stmt);
     } else if (tokens.match(TokenType::AUTO)
         || tokens.match(TokenType::EXTERN)) {
         TokenType var_type { tokens.cur().token_type };
@@ -103,45 +103,6 @@ vector<string> Parser::param_list()
 
     tokens.advance(1);
     return params;
-}
-
-// Blocks used fo example:
-// fun i32 sum(a, b)
-// {
-//     auto i32 a;
-//     auto i32 b;
-//
-//     return a + b;
-// }
-// if (a ~= b) { return a; }
-
-shared_ptr<CompStmt> Parser::compound()
-{
-    tokens.expect(TokenType::LBRACE,
-        "Expected a '{' but got a " + tokens.cur().token_str + " instead!");
-    tokens.advance(1);
-
-    vector<shared_ptr<Decl>> decls {};
-    vector<shared_ptr<Stmt>> stmts {};
-
-    while (true) {
-        if (tokens.match(TokenType::FEOF))
-            throw runtime_error("ERROR: Expected a '}' but got "
-                + tokens.peek(-1).token_str + " instead!");
-
-        if (tokens.match(TokenType::RBRACE)) {
-            tokens.advance(1);
-            break;
-        }
-
-        if (tokens.match(TokenType::EXTERN) || tokens.match(TokenType::AUTO)
-            || tokens.match(TokenType::BASE_TYPE))
-            decls.push_back(declaration());
-        else
-            stmts.push_back(statement());
-    }
-
-    return make_shared<CompStmt>(decls, stmts);
 }
 
 shared_ptr<Stmt> Parser::statement()
@@ -298,40 +259,6 @@ shared_ptr<Expr> Parser::unary()
     }
 
     return primary();
-}
-
-shared_ptr<Expr> Parser::primary()
-{
-    // std::cout << tokens.cur().token_str << '\n';
-    if (tokens.match(TokenType::NUMBER)) {
-        Token tok { tokens.cur() };
-        tokens.advance(1);
-        return make_shared<Number>(tok);
-    }
-
-    if (tokens.match(TokenType::STRING)) {
-        Token tok { tokens.cur() };
-        tokens.advance(1);
-        return make_shared<String>(tok);
-    }
-
-    if (tokens.match(TokenType::LPAREN)) {
-        tokens.advance(1);
-        shared_ptr<Expr> expr { expression() };
-        tokens.expect(TokenType::RPAREN, "Expected a ')'");
-        tokens.advance(1);
-        return make_shared<Grouping>(expr);
-    }
-    if (tokens.match(TokenType::IDENT)) {
-        if (tokens.peek(1).token_type == TokenType::LPAREN)
-            return funcall();
-
-        Token tok { tokens.cur() };
-        tokens.advance(1);
-        return make_shared<Ident>(tok.token_str);
-    }
-    throw runtime_error("ERROR: Expected an expression but got "
-        + tokens.cur().token_str + " instead!");
 }
 
 // funcall: "(" + *expr + ")"

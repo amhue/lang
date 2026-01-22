@@ -1,18 +1,18 @@
 #include <cctype>
 #include <cstddef>
-#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "semantic.hpp"
 
 using std::cerr;
 using std::cout;
-using std::exit;
 using std::ifstream;
 using std::stringstream;
 
@@ -21,7 +21,7 @@ int main(int argc, const char* argv[])
     if (argc < 2) {
         cerr << "ERROR: No file provided!\n"
              << "USAGE: " << argv[0] << " example.a" << '\n';
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     cout << "INFO: File " << argv[1] << '\n';
@@ -39,6 +39,7 @@ int main(int argc, const char* argv[])
         cerr << "ERROR: "
              << "Could not open file " << argv[1] << '\n'
              << "ERROR: " << e.what() << '\n';
+        return EXIT_FAILURE;
     }
 
     stringstream input_buf {};
@@ -46,10 +47,15 @@ int main(int argc, const char* argv[])
     input.close();
 
     TokenStream token_stream { input_buf.str() };
-    token_stream.print();
+    // token_stream.print();
 
-    Parser parser { token_stream };
-    auto program = parser.parse();
+    try {
+        Semantic parser { token_stream };
+        auto program = parser.parse();
+    } catch (const std::runtime_error& e) {
+        cerr << e.what() << '\n';
+        return EXIT_FAILURE;
+    }
 
     return 0;
 }
